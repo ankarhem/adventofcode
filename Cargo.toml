@@ -5,3 +5,5 @@ members = [
   "day1"
 ]
 
+[workspace.dependencies]
+itertools = { version = "0.13.0" }
