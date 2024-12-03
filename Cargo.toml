@@ -4,7 +4,8 @@ resolver = "2"
 members = [
   "day1",
   "day2"
-]
+, "day3"]
 
 [workspace.dependencies]
 itertools = { version = "0.13.0" }
+winnow = { version = "0.6.20" }
