@@ -2,9 +2,12 @@
 resolver = "2"
 
 members = [
-  "day1",
-  "day2"
-, "day3", "lib"]
+    "day1",
+    "day2",
+    "day3",
+    "day4",
+    "lib"
+]
 
 [workspace.dependencies]
 itertools = { version = "0.13.0" }

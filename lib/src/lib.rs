@@ -1,61 +1,98 @@
-pub struct Grid<'a, T> {
-    data: &'a [Vec<T>],
-    height: usize,
+#[derive(Debug)]
+pub struct Grid<T> {
+    data: Vec<Vec<T>>,
     width: usize,
-    current_row: usize,
-    current_col: usize,
+    height: usize,
 }
 
-impl<'a, T> Grid<'a, T> {
-    pub fn new(data: &'a [Vec<T>], height: usize, width: usize) -> Self {
+impl<T: Clone> Grid<T> {
+    pub fn new(data: Vec<Vec<T>>) -> Self {
+        let height = data.len();
+        let width = if height > 0 { data[0].len() } else { 0 };
         Grid {
             data,
-            height,
             width,
-            current_row: 0,
-            current_col: 0,
+            height,
+        }
+    }
+
+    pub fn rows(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
+        self.data.iter().map(|row| row.iter())
+    }
+
+    pub fn columns(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
+        (0..self.width).map(move |x| self.data.iter().map(move |row| &row[x]))
+    }
+
+    pub fn diagonals(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
+        let width = self.width;
+        let height = self.height;
+
+        (0..width + height - 1 + (width + height - 1)).map(move |i| {
+            let is_anti = i >= width + height - 1;
+            let i = if is_anti { i - (width + height - 1) } else { i };
+
+            (0..height)
+                .filter(move |&y| {
+                    if !is_anti {
+                        let x = i as isize - y as isize;
+                        x >= 0 && x < width as isize
+                    } else {
+                        let x = y as isize + i as isize - (height as isize - 1);
+                        x >= 0 && x < width as isize
+                    }
+                })
+                .map(move |y| {
+                    if !is_anti {
+                        &self.data[y][i - y]
+                    } else {
+                        &self.data[y][y + i - (height - 1)]
+                    }
+                })
+        })
+    }
+
+    pub fn windows(&self, w_width: usize, w_height: usize) -> WindowIter<T> {
+        WindowIter {
+            grid: self,
+            w_width,
+            w_height,
+            current_x: 0,
+            current_y: 0,
         }
     }
 }
 
-impl<'a, T> Iterator for Grid<'a, T> {
-    type Item = Vec<&'a [T]>;
+pub struct WindowIter<'a, T> {
+    grid: &'a Grid<T>,
+    w_width: usize,
+    w_height: usize,
+    current_x: usize,
+    current_y: usize,
+}
+
+impl<'a, T: Clone> Iterator for WindowIter<'a, T> {
+    type Item = Vec<Vec<T>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.data.is_empty()
-            || self.height > self.data.len()
-            || self.width > self.data[0].len()
-            || self.current_row > self.data.len() - self.height {
+        if self.current_y + self.w_height > self.grid.height {
             return None;
         }
 
-        let window = self.data[self.current_row..self.current_row + self.height]
-            .iter()
-            .map(|row| &row[self.current_col..self.current_col + self.width])
-            .collect();
-
-        self.current_col += 1;
-        if self.current_col > self.data[0].len() - self.width {
-            self.current_col = 0;
-            self.current_row += 1;
+        if self.current_x + self.w_width > self.grid.width {
+            self.current_x = 0;
+            self.current_y += 1;
+            return self.next();
         }
 
-        Some(window)
-    }
-}
+        let mut window_data = Vec::with_capacity(self.w_height);
+        for y in self.current_y..self.current_y + self.w_height {
+            let row = self.grid.data[y][self.current_x..self.current_x + self.w_width].to_vec();
+            window_data.push(row);
+        }
 
-pub trait Window2DIterator<T> {
-    fn window2d(&self, size: usize) -> Grid<T>;
-    fn window2d_rect(&self, height: usize, width: usize) -> Grid<T>;
-}
-
-impl<T> Window2DIterator<T> for [Vec<T>] {
-    fn window2d(&self, size: usize) -> Grid<T> {
-        Grid::new(self, size, size)
-    }
-
-    fn window2d_rect(&self, height: usize, width: usize) -> Grid<T> {
-        Grid::new(self, height, width)
+        self.current_x += 1;
+        Some(window_data)
     }
 }
 
@@ -63,98 +100,87 @@ impl<T> Window2DIterator<T> for [Vec<T>] {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_2x2_windows() {
-        let matrix = vec![
-            vec![1, 2, 3],
-            vec![4, 5, 6],
-            vec![7, 8, 9],
-        ];
-
-        let windows: Vec<_> = matrix.as_slice().window2d(2).collect();
-
-        assert_eq!(windows.len(), 4);
-        assert_eq!(windows[0], vec![&[1, 2][..], &[4, 5][..]]);
-        assert_eq!(windows[1], vec![&[2, 3][..], &[5, 6][..]]);
-        assert_eq!(windows[2], vec![&[4, 5][..], &[7, 8][..]]);
-        assert_eq!(windows[3], vec![&[5, 6][..], &[8, 9][..]]);
+    fn create_test_grid() -> Grid<i32> {
+        let data = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]; // 3x3 grid
+        Grid::new(data)
     }
 
     #[test]
-    fn test_rectangular_windows() {
-        let matrix = vec![
-            vec![1, 2, 3],
-            vec![4, 5, 6],
-            vec![7, 8, 9],
-        ];
-
-        let windows: Vec<_> = matrix.as_slice().window2d_rect(2, 3).collect();
-
-        assert_eq!(windows.len(), 2);
-        assert_eq!(windows[0], vec![&[1, 2, 3][..], &[4, 5, 6][..]]);
-        assert_eq!(windows[1], vec![&[4, 5, 6][..], &[7, 8, 9][..]]);
+    fn test_new() {
+        let grid = create_test_grid();
+        assert_eq!(grid.width, 3);
+        assert_eq!(grid.height, 3);
+        assert_eq!(grid.data, vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]]);
     }
 
     #[test]
-    fn test_single_cell_windows() {
-        let matrix = vec![
-            vec![1, 2],
-            vec![3, 4],
-        ];
-
-        let windows: Vec<_> = matrix.as_slice().window2d(1).collect();
-
-        assert_eq!(windows.len(), 4);
-        assert_eq!(windows[0], vec![&[1][..]]);
-        assert_eq!(windows[1], vec![&[2][..]]);
-        assert_eq!(windows[2], vec![&[3][..]]);
-        assert_eq!(windows[3], vec![&[4][..]]);
+    fn test_rows() {
+        let grid = create_test_grid();
+        let rows: Vec<Vec<&i32>> = grid.rows().map(|row| row.collect()).collect();
+        assert_eq!(
+            rows,
+            vec![vec![&1, &2, &3], vec![&4, &5, &6], vec![&7, &8, &9]]
+        );
     }
 
     #[test]
-    fn test_empty_matrix() {
-        let matrix: Vec<Vec<i32>> = vec![];
-        let windows: Vec<_> = matrix.as_slice().window2d(1).collect();
-        assert!(windows.is_empty());
+    fn test_columns() {
+        let grid = create_test_grid();
+        let columns: Vec<Vec<&i32>> = grid.columns().map(|col| col.collect()).collect();
+        assert_eq!(
+            columns,
+            vec![vec![&1, &4, &7], vec![&2, &5, &8], vec![&3, &6, &9]]
+        );
     }
 
     #[test]
-    fn test_window_larger_than_matrix() {
-        let matrix = vec![
-            vec![1, 2],
-            vec![3, 4],
-        ];
-
-        let windows: Vec<_> = matrix.as_slice().window2d(3).collect();
-        assert!(windows.is_empty());
+    fn test_windows() {
+        let grid = create_test_grid();
+        let windows: Vec<Vec<Vec<i32>>> = grid.windows(2, 2).collect();
+        assert_eq!(
+            windows,
+            vec![
+                vec![vec![1, 2], vec![4, 5]],
+                vec![vec![2, 3], vec![5, 6]],
+                vec![vec![4, 5], vec![7, 8]],
+                vec![vec![5, 6], vec![8, 9]]
+            ]
+        );
     }
 
     #[test]
-    fn test_iterator_behavior() {
-        let matrix = vec![
-            vec![1, 2],
-            vec![3, 4],
-        ];
-
-        let mut iter = matrix.as_slice().window2d(2);
-
-        assert_eq!(iter.next(), Some(vec![&[1, 2][..], &[3, 4][..]]));
-        assert_eq!(iter.next(), None);
+    fn test_empty_grid() {
+        let grid: Grid<i32> = Grid::new(vec![]);
+        assert_eq!(grid.width, 0);
+        assert_eq!(grid.height, 0);
     }
 
     #[test]
-    fn test_non_square_matrix() {
-        let matrix = vec![
-            vec![1, 2, 3],
-            vec![4, 5, 6],
-        ];
+    fn test_windows_edge_cases() {
+        let grid = create_test_grid();
+        let no_windows: Vec<Vec<Vec<i32>>> = grid.windows(4, 4).collect();
+        assert!(no_windows.is_empty());
+    }
 
-        let windows: Vec<_> = matrix.as_slice().window2d_rect(1, 2).collect();
-
-        assert_eq!(windows.len(), 4);
-        assert_eq!(windows[0], vec![&[1, 2][..]]);
-        assert_eq!(windows[1], vec![&[2, 3][..]]);
-        assert_eq!(windows[2], vec![&[4, 5][..]]);
-        assert_eq!(windows[3], vec![&[5, 6][..]]);
+    #[test]
+    fn test_diagonals() {
+        let grid = create_test_grid();
+        let diagonals: Vec<Vec<&i32>> = grid.diagonals().map(|d| d.collect()).collect();
+        assert_eq!(
+            diagonals,
+            vec![
+                vec![&1],
+                vec![&2, &4],
+                vec![&3, &5, &7],
+                vec![&6, &8],
+                vec![&9],
+                //  should also include the diagonals from the other side
+                vec![&7],
+                vec![&4, &8],
+                vec![&1, &5, &9],
+                vec![&2, &6],
+                vec![&3],
+            ]
+        );
     }
 }
