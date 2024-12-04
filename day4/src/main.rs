@@ -53,7 +53,7 @@ fn main() {
     println!("Day 4, part 1: {}", result1);
 
     let result2 = part_two(input);
-    println!("Day 1, part 2: {}", result2);
+    println!("Day 4, part 2: {}", result2);
 }
 
 #[cfg(test)]
