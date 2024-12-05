@@ -3,10 +3,11 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
-fn parse_input(input: &str) -> (Vec<(u32, u32)>, Vec<Vec<u32>>) {
+fn parse_input(input: &str) -> (HashMap<u32, HashSet<u32>>, Vec<Vec<u32>>) {
     let mut parts = input.split("\n\n");
 
-    let pairs: Vec<(u32, u32)> = parts
+    let table: HashMap<u32, HashSet<u32>> = HashMap::new();
+    let table = parts
         .next()
         .unwrap()
         .lines()
@@ -16,34 +17,32 @@ fn parse_input(input: &str) -> (Vec<(u32, u32)>, Vec<Vec<u32>>) {
                 .collect_tuple()
                 .unwrap()
         })
-        .collect();
+        .fold(table, |mut acc, (x, y)| {
+            acc.entry(x).or_insert(HashSet::new()).insert(y);
+            acc
+        });
     let updates: Vec<Vec<u32>> = parts
         .next()
         .unwrap()
         .lines()
         .map(|nums| nums.split(',').map(|n| n.parse::<u32>().unwrap()).collect())
         .collect();
-    (pairs, updates)
+    (table, updates)
 }
 
-fn build_table(pairs: &Vec<(u32, u32)>) -> HashMap<&u32, HashSet<&u32>> {
-    let table: HashMap<&u32, HashSet<&u32>> = HashMap::new();
-    pairs.iter().fold(table, |mut acc, (x, y)| {
-        acc.entry(x).or_insert(HashSet::new()).insert(y);
-        acc
+fn is_sorted_by_rule_table(table: &HashMap<u32, HashSet<u32>>, update: &[u32]) -> bool {
+    update.windows(2).all(|w| {
+        let (a, b) = (&w[0], &w[1]);
+        table.get(a).map_or(false, |set| set.contains(b))
     })
 }
+
 fn part_one(input: &str) -> u32 {
-    let (pairs, updates) = parse_input(input);
+    let (table, updates) = parse_input(input);
 
-    let table = build_table(&pairs);
-
-    let sorted = updates.iter().filter(|update| {
-        update.windows(2).all(|w| {
-            let (a, b) = (&w[0], &w[1]);
-            table.get(a).map_or(false, |set| set.contains(b))
-        })
-    });
+    let sorted = updates
+        .iter()
+        .filter(|u| is_sorted_by_rule_table(&table, u));
 
     sorted
         .map(|u| u.get((u.len() - 1) / 2).unwrap())
@@ -51,23 +50,11 @@ fn part_one(input: &str) -> u32 {
 }
 
 fn part_two(input: &str) -> u32 {
-    let (pairs, updates) = parse_input(input);
-
-    let table = build_table(&pairs);
+    let (table, updates) = parse_input(input);
 
     let sorted = updates
         .iter()
-        // filter out all that is already sorted
-        .filter(|update| {
-            update
-                .windows(2)
-                .all(|w| {
-                    let (a, b) = (&w[0], &w[1]);
-                    table.get(a).map_or(false, |set| set.contains(b))
-                })
-                .not()
-        })
-        // sort the remaining updates
+        .filter(|u| !is_sorted_by_rule_table(&table, u))
         .map(|update| {
             update
                 .iter()
