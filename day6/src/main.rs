@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::collections::HashSet;
 
+#[derive(Clone, Hash, Eq, PartialEq)]
 enum Direction {
     Up,
     Down,
@@ -8,6 +9,7 @@ enum Direction {
     Right,
 }
 
+#[derive(Clone)]
 struct Map {
     width: isize,
     height: isize,
@@ -55,11 +57,11 @@ impl Map {
 }
 
 impl Iterator for Map {
-    type Item = (isize, isize);
+    type Item = (isize, isize, Direction);
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Check for loop
-        if self.reached_edge || self.guard_has_moved && self.guard_position == self.guard_start_position {
+        // If we've reached the edge, we're done
+        if self.reached_edge {
             return None;
         }
 
@@ -68,9 +70,9 @@ impl Iterator for Map {
             match self.next_position() {
                 // If we can move to the next position, do so
                 Ok(Some(next)) => {
-                    let current = self.guard_position.clone();
+                    let (x, y) = self.guard_position;
                     self.goto(next);
-                    return Some(current);
+                    return Some((x, y, self.guard_direction.clone()));
                 }
                 // If the next position is an obstacle, turn right
                 Ok(None) => {
@@ -79,7 +81,8 @@ impl Iterator for Map {
                 // If the next position is out of bounds, we've reached the edge
                 Err(_) => {
                     self.reached_edge = true;
-                    return Some(self.guard_position);
+                    let (x, y) = self.guard_position;
+                    return Some((x, y, self.guard_direction.clone()));
                 }
             }
         }
@@ -143,13 +146,33 @@ fn parse_input(input: &str) -> Map {
 fn part_one(input: &str) -> u32 {
     let input = parse_input(input);
 
-    let visited: HashSet<_> = input.collect();
+    let visited: HashSet<_> = input.map(|m| (m.0, m.1)).collect();
 
     visited.len() as u32
 }
 
 fn part_two(input: &str) -> u32 {
-    todo!()
+    let input = parse_input(input);
+
+    let original_path: HashSet<_> = input.clone().map(|m| (m.0, m.1)).collect();
+
+    let new_obstacle_candidates = original_path.iter().skip(1);
+
+    new_obstacle_candidates
+        .filter(|(x, y)| {
+            let mut map = input.clone();
+            map.obstacles.push((*x, *y));
+            let mut visited: HashSet<(isize, isize, Direction)> = HashSet::new();
+
+            while let Some(pos) = map.next() {
+                if visited.contains(&pos) {
+                    return true;
+                }
+                visited.insert(pos);
+            }
+            false
+        })
+        .count() as u32
 }
 
 fn main() {
@@ -157,8 +180,8 @@ fn main() {
     let result1 = part_one(input);
     println!("Day 6, part 1: {}", result1);
 
-    // let result2 = part_two(input);
-    // println!("Day 6, part 2: {}", result2);
+    let result2 = part_two(input);
+    println!("Day 6, part 2: {}", result2);
 }
 
 #[cfg(test)]
