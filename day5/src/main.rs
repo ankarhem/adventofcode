@@ -1,7 +1,6 @@
 use itertools::Itertools;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
-use std::ops::Not;
 
 fn parse_input(input: &str) -> (HashMap<u32, HashSet<u32>>, Vec<Vec<u32>>) {
     let mut parts = input.split("\n\n");

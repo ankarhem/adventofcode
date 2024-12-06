@@ -14,10 +14,8 @@ struct Map {
     width: isize,
     height: isize,
     obstacles: Vec<(isize, isize)>,
-    guard_start_position: (isize, isize),
     guard_position: (isize, isize),
     guard_direction: Direction,
-    guard_has_moved: bool,
     reached_edge: bool,
 }
 
@@ -135,10 +133,8 @@ fn parse_input(input: &str) -> Map {
         width,
         height,
         obstacles,
-        guard_start_position: guard_position,
         guard_position,
         guard_direction,
-        guard_has_moved: false,
         reached_edge: false,
     }
 }
