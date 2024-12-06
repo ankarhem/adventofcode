@@ -13,7 +13,7 @@ enum Direction {
 struct Map {
     width: isize,
     height: isize,
-    obstacles: Vec<(isize, isize)>,
+    obstacles: HashSet<(isize, isize)>,
     guard_position: (isize, isize),
     guard_direction: Direction,
     reached_edge: bool,
@@ -95,7 +95,7 @@ fn parse_input(input: &str) -> Map {
     let mut guard_direction = Direction::Up;
     let mut width = 0;
     let mut height = 0;
-    let mut obstacles = vec![];
+    let mut obstacles = HashSet::new();
 
     for (y, line) in input.lines().enumerate() {
         let y = y as isize;
@@ -104,12 +104,6 @@ fn parse_input(input: &str) -> Map {
 
         for (x, c) in line.chars().enumerate() {
             let x = x as isize;
-            if c == '^' {
-                guard_position = (x, y);
-            }
-            if c == '#' {
-                obstacles.push((x, y));
-            }
             match c {
                 '^' | 'v' | '<' | '>' => {
                     guard_position = (x, y);
@@ -122,7 +116,7 @@ fn parse_input(input: &str) -> Map {
                     };
                 }
                 '#' => {
-                    obstacles.push((x, y));
+                    obstacles.insert((x, y));
                 }
                 _ => (),
             }
@@ -152,12 +146,12 @@ fn part_two(input: &str) -> u32 {
 
     let original_path: HashSet<_> = input.clone().map(|m| (m.0, m.1)).collect();
 
-    let new_obstacle_candidates = original_path.iter().skip(1);
-
-    new_obstacle_candidates
-        .filter(|(x, y)| {
+    original_path
+        .iter()
+        .skip(1)
+        .filter(|&&extra_obstacle| {
             let mut map = input.clone();
-            map.obstacles.push((*x, *y));
+            map.obstacles.insert(extra_obstacle);
             let mut visited: HashSet<(isize, isize, Direction)> = HashSet::new();
 
             for pos in map {
