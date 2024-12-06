@@ -16,6 +16,7 @@ struct Map {
     guard_position: (isize, isize),
     guard_direction: Direction,
     guard_has_moved: bool,
+    reached_edge: bool,
 }
 
 impl Map {
@@ -58,7 +59,7 @@ impl Iterator for Map {
 
     fn next(&mut self) -> Option<Self::Item> {
         // Check for loop
-        if self.guard_has_moved && self.guard_position == self.guard_start_position {
+        if self.reached_edge || self.guard_has_moved && self.guard_position == self.guard_start_position {
             return None;
         }
 
@@ -67,16 +68,18 @@ impl Iterator for Map {
             match self.next_position() {
                 // If we can move to the next position, do so
                 Ok(Some(next)) => {
+                    let current = self.guard_position.clone();
                     self.goto(next);
-                    return Some(self.guard_position);
+                    return Some(current);
                 }
                 // If the next position is an obstacle, turn right
                 Ok(None) => {
                     self.turn_right();
                 }
-                // If the next position is out of bounds, we're done
+                // If the next position is out of bounds, we've reached the edge
                 Err(_) => {
-                    return None;
+                    self.reached_edge = true;
+                    return Some(self.guard_position);
                 }
             }
         }
@@ -133,6 +136,7 @@ fn parse_input(input: &str) -> Map {
         guard_position,
         guard_direction,
         guard_has_moved: false,
+        reached_edge: false,
     }
 }
 
@@ -171,6 +175,6 @@ mod test {
     fn example_two() {
         let example = include_str!("example");
         let actual = part_two(example);
-        assert_eq!(31, actual);
+        assert_eq!(6, actual);
     }
 }
