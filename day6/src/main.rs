@@ -160,7 +160,7 @@ fn part_two(input: &str) -> u32 {
             map.obstacles.push((*x, *y));
             let mut visited: HashSet<(isize, isize, Direction)> = HashSet::new();
 
-            while let Some(pos) = map.next() {
+            for pos in map {
                 if visited.contains(&pos) {
                     return true;
                 }

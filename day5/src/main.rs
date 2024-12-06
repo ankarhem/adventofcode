@@ -17,7 +17,7 @@ fn parse_input(input: &str) -> (HashMap<u32, HashSet<u32>>, Vec<Vec<u32>>) {
                 .unwrap()
         })
         .fold(table, |mut acc, (x, y)| {
-            acc.entry(x).or_insert(HashSet::new()).insert(y);
+            acc.entry(x).or_default().insert(y);
             acc
         });
     let updates: Vec<Vec<u32>> = parts
