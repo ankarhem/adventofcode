@@ -1,4 +1,4 @@
-use lib::Grid;
+use lib::grid::Grid;
 
 fn parse_input(input: &str) -> Grid<char> {
     let input: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();

@@ -1,8 +1,8 @@
-use winnow::ascii::{digit1};
 use winnow::combinator::{alt, delimited, separated_pair};
-use winnow::{PResult, Parser};
 use winnow::error::InputError;
 use winnow::token::any;
+use winnow::{PResult, Parser};
+use lib::parsers::number;
 
 #[derive(Debug, PartialEq)]
 struct Multiplication {
@@ -11,15 +11,7 @@ struct Multiplication {
 }
 
 fn numbers_in_parens(input: &mut &str) -> PResult<(u32, u32)> {
-    let number = |input: &mut &str| {
-        digit1.try_map(|s: &str| s.parse::<u32>()).parse_next(input)
-    };
-
-    delimited(
-        '(',
-        separated_pair(number, ',', number),
-        ')',
-    ).parse_next(input)
+    delimited('(', separated_pair(number, ',', number), ')').parse_next(input)
 }
 
 fn multiplication(input: &mut &str) -> PResult<Multiplication> {
@@ -31,7 +23,7 @@ fn part_one(mut input: &str) -> u32 {
     let mut multiplications: Vec<Multiplication> = vec![];
 
     while !input.is_empty() {
-        if let Ok(mul) = multiplication.parse_next(&mut  input) {
+        if let Ok(mul) = multiplication.parse_next(&mut input) {
             multiplications.push(mul);
         } else {
             any::<_, InputError<_>>.parse_next(&mut input).unwrap();
@@ -43,7 +35,7 @@ fn part_one(mut input: &str) -> u32 {
 
 enum Instruction {
     Do,
-    Dont
+    Dont,
 }
 
 fn instruction(input: &mut &str) -> PResult<Instruction> {
@@ -64,7 +56,9 @@ fn part_two(mut input: &str) -> u32 {
 
         match (&current_instruction, multiplication.parse_next(&mut input)) {
             (Instruction::Do, Ok(mul)) => multiplications.push(mul),
-            _ => {any::<_, InputError<_>>.parse_next(&mut input).unwrap();},
+            _ => {
+                any::<_, InputError<_>>.parse_next(&mut input).unwrap();
+            }
         }
     }
 
