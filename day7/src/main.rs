@@ -24,12 +24,12 @@ where
     Eq: std::ops::Deref,
     Eq: std::ops::Deref<Target=(u64, Vec<u64>)>,
 {
-    let target = &equation.0;
+    let target = equation.0;
     let numbers = &equation.1;
 
     if numbers.len() == 1 {
-        return target == &numbers[0] || (
-            *target % numbers[0] == 0 &&
+        return target == numbers[0] || (
+            target % numbers[0] == 0 &&
             target / numbers[0] == 0
         );
     }
@@ -38,12 +38,12 @@ where
         match op {
             Operation::Add => {
                 // prevent subtraction from going negative
-                *target >= numbers[0] &&
+                target >= numbers[0] &&
                 is_valid_equation(&&(target - numbers[0], numbers[1..].to_vec()))
             }
             Operation::Multiply => {
                 // prevent division from going fractional
-                *target % numbers[0] == 0 &&
+                target % numbers[0] == 0 &&
                 is_valid_equation(&&(target / numbers[0], numbers[1..].to_vec()))
             }
         }
