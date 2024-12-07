@@ -4,11 +4,8 @@ use winnow::combinator::{separated, separated_pair};
 use winnow::{PResult, Parser};
 
 fn parse_input(input: &mut &str) -> PResult<Vec<(u64, Vec<u64>)>> {
-    let equation_parser = separated_pair(
-        number::<u64>,
-        ": ",
-        separated(1.., number::<u64>, space1),
-    );
+    let equation_parser =
+        separated_pair(number::<u64>, ": ", separated(1.., number::<u64>, space1));
 
     separated(1.., equation_parser, newline).parse_next(input)
 }
@@ -22,29 +19,26 @@ const OPERATIONS: [Operation; 2] = [Operation::Add, Operation::Multiply];
 fn is_valid_equation<Eq>(equation: &Eq) -> bool
 where
     Eq: std::ops::Deref,
-    Eq: std::ops::Deref<Target=(u64, Vec<u64>)>,
+    Eq: std::ops::Deref<Target = (u64, Vec<u64>)>,
 {
     let target = equation.0;
     let numbers = &equation.1;
 
     if numbers.len() == 1 {
-        return target == numbers[0] || (
-            target % numbers[0] == 0 &&
-            target / numbers[0] == 0
-        );
+        return target == numbers[0] || (target % numbers[0] == 0 && target / numbers[0] == 0);
     }
 
     OPERATIONS.iter().any(|op| {
         match op {
             Operation::Add => {
                 // prevent subtraction from going negative
-                target >= numbers[0] &&
-                is_valid_equation(&&(target - numbers[0], numbers[1..].to_vec()))
+                target >= numbers[0]
+                    && is_valid_equation(&&(target - numbers[0], numbers[1..].to_vec()))
             }
             Operation::Multiply => {
                 // prevent division from going fractional
-                target % numbers[0] == 0 &&
-                is_valid_equation(&&(target / numbers[0], numbers[1..].to_vec()))
+                target % numbers[0] == 0
+                    && is_valid_equation(&&(target / numbers[0], numbers[1..].to_vec()))
             }
         }
     })
@@ -53,7 +47,11 @@ where
 fn part_one(mut input: &str) -> u64 {
     let input = parse_input(&mut input).unwrap();
 
-    input.iter().filter(is_valid_equation).map(|(target, _)| *target).sum()
+    input
+        .iter()
+        .filter(is_valid_equation)
+        .map(|(target, _)| *target)
+        .sum()
 }
 
 fn part_two(_input: &str) -> u64 {

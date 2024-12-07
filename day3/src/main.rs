@@ -1,8 +1,8 @@
+use lib::parsers::number;
 use winnow::combinator::{alt, delimited, separated_pair};
 use winnow::error::InputError;
 use winnow::token::any;
 use winnow::{PResult, Parser};
-use lib::parsers::number;
 
 #[derive(Debug, PartialEq)]
 struct Multiplication {

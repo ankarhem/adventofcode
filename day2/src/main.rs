@@ -1,15 +1,13 @@
 struct Report {
-    levels: Vec<u32>
+    levels: Vec<u32>,
 }
 
 impl Report {
     fn new(levels: Vec<u32>) -> Report {
-        Report {
-            levels
-        }
+        Report { levels }
     }
 
-    fn is_valid (&self) -> bool {
+    fn is_valid(&self) -> bool {
         let asc = self.levels.is_sorted();
         let desc = self.levels.iter().rev().is_sorted();
 
@@ -41,7 +39,8 @@ fn parse_input(input: &str) -> Vec<Report> {
     input
         .lines()
         .map(|line| {
-            let levels = line.split_whitespace()
+            let levels = line
+                .split_whitespace()
                 .map(|num| num.parse::<u32>().unwrap())
                 .collect::<Vec<u32>>();
             Report::new(levels)
@@ -52,13 +51,10 @@ fn parse_input(input: &str) -> Vec<Report> {
 fn part_one(input: &str) -> u32 {
     let reports = parse_input(input);
 
-    let safe_reports = reports
-        .iter()
-        .filter(|report| report.is_valid());
+    let safe_reports = reports.iter().filter(|report| report.is_valid());
 
     safe_reports.count() as u32
 }
-
 
 fn part_two(input: &str) -> u32 {
     let reports = parse_input(input);

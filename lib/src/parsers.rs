@@ -5,7 +5,11 @@ use winnow::{PResult, Parser};
 
 pub fn number<F>(input: &mut &str) -> PResult<F>
 where
-    F: FromStr, <F as FromStr>::Err: std::error::Error, <F as FromStr>::Err: Send, <F as FromStr>::Err: Sync, <F as FromStr>::Err: 'static
+    F: FromStr,
+    <F as FromStr>::Err: std::error::Error,
+    <F as FromStr>::Err: Send,
+    <F as FromStr>::Err: Sync,
+    <F as FromStr>::Err: 'static,
 {
     digit1
         .try_map(|s: &str| s.parse::<F>())
