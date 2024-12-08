@@ -13,4 +13,5 @@ members = [
 [workspace.dependencies]
 itertools = { version = "0.13.0" }
 winnow = { version = "0.6.20" }
-anyhow = "1.0.94"
+anyhow = { version = "1.0.94" }
+rstest = { version = "0.23.0" }
