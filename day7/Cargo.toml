@@ -7,4 +7,5 @@ edition = "2021"
 winnow = { workspace = true }
 itertools = { workspace = true }
 rstest = { workspace = true }
+rayon = { workspace = true }
 lib = { path = "../lib" }

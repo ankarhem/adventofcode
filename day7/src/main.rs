@@ -1,5 +1,6 @@
-use itertools::Itertools;
+use itertools::{FoldWhile, Itertools};
 use lib::parsers::number;
+use rayon::prelude::*;
 use winnow::ascii::{newline, space1};
 use winnow::combinator::{separated, separated_pair};
 use winnow::{PResult, Parser};
@@ -38,15 +39,23 @@ impl Equation {
     fn is_valid_using(&self, ops: &[Operation]) -> bool {
         let operation_combinations = (0..self.1.len() - 1)
             .map(|_| ops.iter())
-            .multi_cartesian_product();
+            .multi_cartesian_product()
+            .collect::<Vec<_>>();
 
-        operation_combinations.into_iter().any(|ops| {
+        operation_combinations.par_iter().any(|ops| {
             let result = ops
                 .iter()
                 .zip(&self.1[1..])
-                .fold(self.1[0], |acc, (op, &value)| op.execute(acc, value));
+                .fold_while(self.1[0], |acc, (op, &value)| {
+                    let result = op.execute(acc, value);
+                    if result > self.0 {
+                        FoldWhile::Done(result)
+                    } else {
+                        FoldWhile::Continue(result)
+                    }
+                });
 
-            result == self.0
+            result.into_inner() == self.0
         })
     }
 }
@@ -86,7 +95,7 @@ mod test {
         assert!(equation.is_valid_using(&PART_ONE_OPERATIONS), "Equation should be valid");
         assert!(equation.is_valid_using(&PART_TWO_OPERATIONS), "Equation should be valid");
     }
-    
+
     #[rstest]
     #[case(156, vec![15, 6])]
     #[case(7290, vec![6, 8, 6, 15])]
