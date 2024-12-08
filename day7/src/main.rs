@@ -16,15 +16,18 @@ fn parse_input(input: &mut &str) -> PResult<Vec<Equation>> {
 enum Operation {
     Add,
     Multiply,
+    Concatenate,
 }
 
-const OPERATIONS: [Operation; 2] = [Operation::Add, Operation::Multiply];
+const PART_ONE_OPERATIONS: [Operation; 2] = [Operation::Add, Operation::Multiply];
+const PART_TWO_OPERATIONS: [Operation; 3] = [Operation::Add, Operation::Multiply, Operation::Concatenate];
 
 impl Operation {
     fn execute(&self, a: u64, b: u64) -> u64 {
         match self {
             Operation::Add => a + b,
             Operation::Multiply => a * b,
+            Operation::Concatenate => format!("{}{}", a, b).parse().unwrap()
         }
     }
 }
@@ -32,9 +35,9 @@ impl Operation {
 struct Equation(u64, Vec<u64>);
 
 impl Equation {
-    fn is_valid(&self) -> bool {
+    fn is_valid_using(&self, ops: &[Operation]) -> bool {
         let operation_combinations = (0..self.1.len() - 1)
-            .map(|_| OPERATIONS.iter())
+            .map(|_| ops.iter())
             .multi_cartesian_product();
 
         operation_combinations.into_iter().any(|ops| {
@@ -51,11 +54,13 @@ impl Equation {
 fn part_one(mut input: &str) -> u64 {
     let input = parse_input(&mut input).unwrap();
 
-    input.iter().filter(|eq| eq.is_valid()).map(|eq| eq.0).sum()
+    input.iter().filter(|eq| eq.is_valid_using(&PART_ONE_OPERATIONS)).map(|eq| eq.0).sum()
 }
 
-fn part_two(_input: &str) -> u64 {
-    todo!()
+fn part_two(mut input: &str) -> u64 {
+    let input = parse_input(&mut input).unwrap();
+
+    input.iter().filter(|eq| eq.is_valid_using(&PART_TWO_OPERATIONS)).map(|eq| eq.0).sum()
 }
 
 fn main() {
@@ -63,8 +68,8 @@ fn main() {
     let result1 = part_one(input);
     println!("Day 7, part 1: {}", result1);
 
-    // let result2 = part_two(input);
-    // println!("Day 7, part 2: {}", result2);
+    let result2 = part_two(input);
+    println!("Day 7, part 2: {}", result2);
 }
 
 #[cfg(test)]
@@ -78,7 +83,17 @@ mod test {
     #[case(292, vec![11, 6, 16, 20])]
     fn valid_equation_should_pass_validation(#[case] target: u64, #[case] numbers: Vec<u64>) {
         let equation = Equation(target, numbers);
-        assert!(equation.is_valid(), "Equation should be valid");
+        assert!(equation.is_valid_using(&PART_ONE_OPERATIONS), "Equation should be valid");
+        assert!(equation.is_valid_using(&PART_TWO_OPERATIONS), "Equation should be valid");
+    }
+    
+    #[rstest]
+    #[case(156, vec![15, 6])]
+    #[case(7290, vec![6, 8, 6, 15])]
+    #[case(192, vec![17, 8, 14])]
+    fn valid_equation_using_concat_should_pass_validation(#[case] target: u64, #[case] numbers: Vec<u64>) {
+        let equation = Equation(target, numbers);
+        assert!(equation.is_valid_using(&PART_TWO_OPERATIONS), "Equation should be valid");
     }
 
     #[test]
@@ -88,10 +103,10 @@ mod test {
         assert_eq!(3749, actual);
     }
 
-    // #[test]
-    // fn example_two() {
-    //     let example = include_str!("example");
-    //     let actual = part_two(example);
-    //     assert_eq!(31, actual);
-    // }
+    #[test]
+    fn example_two() {
+        let example = include_str!("example");
+        let actual = part_two(example);
+        assert_eq!(11387, actual);
+    }
 }
