@@ -6,11 +6,8 @@ use winnow::{PResult, Parser};
 
 fn parse_input(input: &mut &str) -> PResult<Vec<Equation>> {
     let equation_parser =
-        separated_pair(
-            number::<u64>,
-            ": ",
-            separated(1.., number::<u64>, space1),
-        ).map(|(target, values)| Equation(target, values));
+        separated_pair(number::<u64>, ": ", separated(1.., number::<u64>, space1))
+            .map(|(target, values)| Equation(target, values));
 
     separated(1.., equation_parser, newline).parse_next(input)
 }
@@ -32,7 +29,6 @@ impl Operation {
     }
 }
 
-
 struct Equation(u64, Vec<u64>);
 
 impl Equation {
@@ -41,26 +37,21 @@ impl Equation {
             .map(|_| OPERATIONS.iter())
             .multi_cartesian_product();
 
-        operation_combinations
-            .into_iter()
-            .any(|ops| {
-                let result = ops
-                    .iter().zip(&self.1[1..])
-                    .fold(self.1[0], |acc, (op, &value)| op.execute(acc, value));
+        operation_combinations.into_iter().any(|ops| {
+            let result = ops
+                .iter()
+                .zip(&self.1[1..])
+                .fold(self.1[0], |acc, (op, &value)| op.execute(acc, value));
 
-                result == self.0
-            })
+            result == self.0
+        })
     }
 }
 
 fn part_one(mut input: &str) -> u64 {
     let input = parse_input(&mut input).unwrap();
 
-    input
-        .iter()
-        .filter(|eq| eq.is_valid())
-        .map(|eq| eq.0)
-        .sum()
+    input.iter().filter(|eq| eq.is_valid()).map(|eq| eq.0).sum()
 }
 
 fn part_two(_input: &str) -> u64 {
