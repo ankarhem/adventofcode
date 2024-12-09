@@ -1,6 +1,5 @@
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::ops::Deref;
 
 fn parse_input(input: &str) -> HashMap<char, Vec<(isize, isize)>> {
     let mut antennas = HashMap::new();
@@ -20,24 +19,24 @@ fn part_one(input: &str) -> u32 {
 
     let antennas = parse_input(input);
 
-    antennas.iter().map(|(_, coords)| {
+    let anti_nodes = antennas.iter().flat_map(|(_, coords)| {
         coords.iter()
             .combinations(2)
             .flat_map(|pair| {
-                let (x1, y1) = pair[0];
-                let (x2, y2) = pair[1];
-                
-                let distance = (x1.abs_diff(*x2) as isize, y1.abs_diff(*y2) as isize);
+                let (x1, y1) = &pair[0];
+                let (x2, y2) = &pair[1];
+
+                let (dx, dy) = (x2 - x1, y2 - y1);
 
                 vec![
-                    (x1 - distance.0, y1 - distance.1),
-                    (x1 + distance.0, y1 + distance.1),
+                    (x1 - dx, y1 - dy),
+                    (x2 + dx, y2 + dy),
                 ]
             })
             .filter(|&(x, y)| x >= 0 && x < width && y >= 0 && y < height)
-            .unique()
-            .count() as u32
-    }).sum()
+    });
+
+    anti_nodes.unique().count() as u32
 }
 
 fn part_two(input: &str) -> u32 {
@@ -62,6 +61,21 @@ mod test {
         let actual = part_one(example);
         assert_eq!(14, actual);
     }
+
+    #[test]
+    fn example_one_simple() {
+        let example = include_str!("example_mini");
+        let actual = part_one(example);
+        assert_eq!(2, actual);
+    }
+
+    #[test]
+    fn example_one_medium() {
+        let example = include_str!("example_medium");
+        let actual = part_one(example);
+        assert_eq!(4, actual);
+    }
+
 
     // #[test]
     // fn example_two() {
