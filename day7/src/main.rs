@@ -21,14 +21,15 @@ enum Operation {
 }
 
 const PART_ONE_OPERATIONS: [Operation; 2] = [Operation::Add, Operation::Multiply];
-const PART_TWO_OPERATIONS: [Operation; 3] = [Operation::Add, Operation::Multiply, Operation::Concatenate];
+const PART_TWO_OPERATIONS: [Operation; 3] =
+    [Operation::Add, Operation::Multiply, Operation::Concatenate];
 
 impl Operation {
     fn execute(&self, a: u64, b: u64) -> u64 {
         match self {
             Operation::Add => a + b,
             Operation::Multiply => a * b,
-            Operation::Concatenate => format!("{}{}", a, b).parse().unwrap()
+            Operation::Concatenate => format!("{}{}", a, b).parse().unwrap(),
         }
     }
 }
@@ -63,13 +64,21 @@ impl Equation {
 fn part_one(mut input: &str) -> u64 {
     let input = parse_input(&mut input).unwrap();
 
-    input.iter().filter(|eq| eq.is_valid_using(&PART_ONE_OPERATIONS)).map(|eq| eq.0).sum()
+    input
+        .iter()
+        .filter(|eq| eq.is_valid_using(&PART_ONE_OPERATIONS))
+        .map(|eq| eq.0)
+        .sum()
 }
 
 fn part_two(mut input: &str) -> u64 {
     let input = parse_input(&mut input).unwrap();
 
-    input.iter().filter(|eq| eq.is_valid_using(&PART_TWO_OPERATIONS)).map(|eq| eq.0).sum()
+    input
+        .iter()
+        .filter(|eq| eq.is_valid_using(&PART_TWO_OPERATIONS))
+        .map(|eq| eq.0)
+        .sum()
 }
 
 fn main() {
@@ -92,17 +101,29 @@ mod test {
     #[case(292, vec![11, 6, 16, 20])]
     fn valid_equation_should_pass_validation(#[case] target: u64, #[case] numbers: Vec<u64>) {
         let equation = Equation(target, numbers);
-        assert!(equation.is_valid_using(&PART_ONE_OPERATIONS), "Equation should be valid");
-        assert!(equation.is_valid_using(&PART_TWO_OPERATIONS), "Equation should be valid");
+        assert!(
+            equation.is_valid_using(&PART_ONE_OPERATIONS),
+            "Equation should be valid"
+        );
+        assert!(
+            equation.is_valid_using(&PART_TWO_OPERATIONS),
+            "Equation should be valid"
+        );
     }
 
     #[rstest]
     #[case(156, vec![15, 6])]
     #[case(7290, vec![6, 8, 6, 15])]
     #[case(192, vec![17, 8, 14])]
-    fn valid_equation_using_concat_should_pass_validation(#[case] target: u64, #[case] numbers: Vec<u64>) {
+    fn valid_equation_using_concat_should_pass_validation(
+        #[case] target: u64,
+        #[case] numbers: Vec<u64>,
+    ) {
         let equation = Equation(target, numbers);
-        assert!(equation.is_valid_using(&PART_TWO_OPERATIONS), "Equation should be valid");
+        assert!(
+            equation.is_valid_using(&PART_TWO_OPERATIONS),
+            "Equation should be valid"
+        );
     }
 
     #[test]

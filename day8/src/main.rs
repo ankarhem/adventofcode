@@ -17,7 +17,10 @@ fn parse_input(input: &str) -> HashMap<char, Vec<(isize, isize)>> {
     for (y, line) in input.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
             if c.is_alphanumeric() {
-                antennas.entry(c).or_insert_with(Vec::new).push((x as isize, y as isize));
+                antennas
+                    .entry(c)
+                    .or_insert_with(Vec::new)
+                    .push((x as isize, y as isize));
             }
         }
     }
@@ -31,7 +34,8 @@ fn part_one(input: &str) -> u32 {
     let antennas = parse_input(input);
 
     let anti_nodes = antennas.iter().flat_map(|(_, coords)| {
-        coords.iter()
+        coords
+            .iter()
             .combinations(2)
             .flat_map(|pair| {
                 let (x1, y1) = &pair[0];
@@ -39,10 +43,7 @@ fn part_one(input: &str) -> u32 {
 
                 let (dx, dy) = (x2 - x1, y2 - y1);
 
-                vec![
-                    (x1 - dx, y1 - dy),
-                    (x2 + dx, y2 + dy),
-                ]
+                vec![(x1 - dx, y1 - dy), (x2 + dx, y2 + dy)]
             })
             .filter(|anti_node| anti_node.in_bounds(width, height))
     });
@@ -57,7 +58,8 @@ fn part_two(input: &str) -> u32 {
     let antennas = parse_input(input);
 
     let anti_nodes = antennas.iter().flat_map(|(_, coords)| {
-        coords.iter()
+        coords
+            .iter()
             .combinations(2)
             .flat_map(|pair| {
                 let (x1, y1) = &pair[0];
@@ -66,11 +68,15 @@ fn part_two(input: &str) -> u32 {
                 let (dx, dy) = (x2 - x1, y2 - y1);
 
                 let positive = (1..)
-                    .take_while(move |factor| (x1 + factor * dx, y1 + factor * dy).in_bounds(width, height))
+                    .take_while(move |factor| {
+                        (x1 + factor * dx, y1 + factor * dy).in_bounds(width, height)
+                    })
                     .map(move |factor| (x1 + factor * dx, y1 + factor * dy));
 
                 let negative = (1..)
-                    .take_while(move |factor| (x2 - factor * dx, y2 - factor * dy).in_bounds(width, height))
+                    .take_while(move |factor| {
+                        (x2 - factor * dx, y2 - factor * dy).in_bounds(width, height)
+                    })
                     .map(move |factor| (x2 - factor * dx, y2 - factor * dy));
 
                 positive.chain(negative)
