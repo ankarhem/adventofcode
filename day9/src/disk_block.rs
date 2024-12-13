@@ -1,10 +1,7 @@
 use anyhow::anyhow;
+use itertools::Itertools;
 use std::str::FromStr;
-use winnow::ascii::digit1;
-use winnow::combinator::{alt, repeat};
 use winnow::stream::Accumulate;
-use winnow::token::take_while;
-use winnow::{PResult, Parser};
 
 #[derive(Debug)]
 pub enum DiskBlock {
@@ -45,18 +42,25 @@ impl Accumulate<(DiskBlock, Option<DiskBlock>)> for DiskMap {
         }
     }
 }
+impl FromIterator<DiskBlock> for DiskMap {
+    fn from_iter<T: IntoIterator<Item=DiskBlock>>(iter: T) -> Self {
+        let disk_map = iter.into_iter().collect::<Vec<DiskBlock>>();
+        DiskMap(disk_map)
+    }
+}
 
-fn parse_diskmap(input: &mut &str) -> PResult<DiskMap> {
-    let disk_map = repeat(1.., alt(
-        (
-            digit1.map(|d: &str| {
-                DiskBlock::File { id: usize::from_str(&d[0..1]).unwrap(), size: d.len() as u32 }
-            }),
-            take_while(1.., |c| c == '.').map(|d: &str| DiskBlock::Free(d.len() as u32))
-        )
-    )).parse_next(input)?;
+fn parse_diskmap(input: &str) -> anyhow::Result<DiskMap> {
+    let chunks = input.chars().chunk_by(|c| *c);
 
-    Ok(DiskMap(disk_map))
+    chunks.into_iter().map(|(c, group)| {
+        match c {
+            '.' => Ok(DiskBlock::Free(group.count() as u32)),
+            _ => {
+                let id = c.to_digit(10).ok_or(anyhow!("Invalid digit"))?;
+                Ok(DiskBlock::File { id: id as usize, size: group.count() as u32 })
+            }
+        }
+    }).collect()
 }
 
 impl FromStr for DiskMap {
@@ -76,7 +80,7 @@ mod test {
     #[rstest]
     #[case("0..111....22222")]
     #[case("00...111...2...333.44.5555.6666.777.888899")]
-    fn can_parse_to_and_from_str_mini(#[case] disk_map_str: &str) {
+    fn can_parse_to_and_from_str(#[case] disk_map_str: &str) {
         let parsed: DiskMap = disk_map_str.parse().unwrap();
         let actual = parsed.to_string();
         assert_eq!(disk_map_str, actual);
