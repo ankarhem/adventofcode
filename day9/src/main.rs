@@ -34,34 +34,23 @@ fn parse_input(input: &mut &str) -> PResult<DiskMap> {
 fn part_one(mut input: &str) -> u128 {
     let input = parse_input(&mut input).unwrap();
 
-    dbg!(input.fragmented().collect::<DiskMap>().to_string());
-
-    let output: u128 = input.fragmented()
-        .flat_map(|block| {
-            match block {
-                DiskBlock::Free(_) => vec![block],
-                DiskBlock::File { id, size } => {
-                    (0..size)
-                        .map(|_| DiskBlock::File { id, size: 1 })
-                        .collect()
-                }
-            }
-        })
-        .enumerate()
-        .map(|(i, block)| {
-            match block {
-                DiskBlock::Free(_) => 0,
-                DiskBlock::File { id, size } => id as u128 * i as u128
-            }
-        })
-        .sum();
-
+    let output: u128 = input
+        .fragmented()
+        .collect::<DiskMap>()
+        .checksum();
 
     output
 }
 
-fn part_two(input: &str) -> u32 {
-    todo!()
+fn part_two(mut input: &str) -> u128 {
+    let input = parse_input(&mut input).unwrap();
+
+    let output: u128 = input
+        .defragmented()
+        .collect::<DiskMap>()
+        .checksum();
+
+    output
 }
 
 fn main() {
@@ -69,8 +58,8 @@ fn main() {
     let result1 = part_one(input);
     println!("Day 1, part 1: {}", result1);
 
-    // let result2 = part_two(input);
-    // println!("Day 1, part 2: {}", result2);
+    let result2 = part_two(input);
+    println!("Day 1, part 2: {}", result2);
 }
 
 #[cfg(test)]
@@ -98,10 +87,10 @@ mod test {
         assert_eq!(1928, actual);
     }
 
-    // #[test]
-    // fn example_two() {
-    //     let example = include_str!("example");
-    //     let actual = part_two(example);
-    //     assert_eq!(31, actual);
-    // }
+    #[test]
+    fn example_two() {
+        let example = include_str!("example");
+        let actual = part_two(example);
+        assert_eq!(2858, actual);
+    }
 }

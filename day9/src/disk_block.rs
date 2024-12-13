@@ -1,5 +1,7 @@
 use anyhow::anyhow;
 use itertools::Itertools;
+use std::collections::HashSet;
+use std::ops::Mul;
 use std::str::FromStr;
 use winnow::stream::Accumulate;
 
@@ -103,6 +105,31 @@ impl DiskMap {
             }).sum::<u32>(),
         }
     }
+
+    pub fn checksum(&self) -> u128 {
+        self.0
+            .iter()
+            .flat_map(|block| {
+                match block {
+                    DiskBlock::Free(size) => {
+                        (0..*size).map(|_| DiskBlock::Free(1)).collect::<Vec<DiskBlock>>()
+                    }
+                    DiskBlock::File { id, size } => {
+                        (0..*size)
+                            .map(|_| DiskBlock::File { id: *id, size: 1 })
+                            .collect::<Vec<DiskBlock>>()
+                    }
+                }
+            })
+            .enumerate()
+            .map(|(i, block)| {
+                match block {
+                    DiskBlock::Free(_) => 0,
+                    DiskBlock::File { id, size } => id.mul(i) as u128
+                }
+            })
+            .sum()
+    }
 }
 
 impl<'a> Iterator for FragmentedIter<'a> {
@@ -179,6 +206,76 @@ impl<'a> Iterator for FragmentedIter<'a> {
     }
 }
 
+pub struct DefragmentedIter<'a> {
+    iter: &'a [DiskBlock],
+    current_idx: usize,
+    used_file_ids: HashSet<usize>,
+    current_filled_free_size: u32,
+}
+
+impl DiskMap {
+    pub fn defragmented(&self) -> DefragmentedIter {
+        DefragmentedIter {
+            iter: &self.0,
+            current_idx: 0,
+            current_filled_free_size: 0,
+            used_file_ids: HashSet::new(),
+        }
+    }
+}
+
+impl Iterator for DefragmentedIter<'_> {
+    type Item = DiskBlock;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.current_idx < self.iter.len() {
+            let block = &self.iter[self.current_idx];
+
+            return match block {
+                DiskBlock::File { id, size } => {
+                    self.current_idx += 1;
+                    if self.used_file_ids.contains(id) {
+                        return Some(DiskBlock::Free(*size));
+                    }
+                    self.used_file_ids.insert(*id);
+                    Some(DiskBlock::File { id: *id, size: *size })
+                }
+                DiskBlock::Free(size) => {
+                    let size = *size - self.current_filled_free_size;
+                    let defragmented_block = self.iter.iter().rev()
+                        .find(|block| {
+                            match block {
+                                DiskBlock::File { id: candidate_id, size: candidate_size } => {
+                                    return candidate_size <= &size && !self.used_file_ids.contains(candidate_id);
+                                }
+                                _ => false,
+                            }
+                        });
+
+                    match defragmented_block {
+                        Some(DiskBlock::File { id: defragmented_id, size: defragmented_size }) => {
+                            if defragmented_size == &size {
+                                self.current_idx += 1;
+                                self.current_filled_free_size = 0;
+                            } else {
+                                self.current_filled_free_size += defragmented_size;
+                            }
+                            self.used_file_ids.insert(*defragmented_id);
+                            Some(defragmented_block.unwrap().clone())
+                        }
+                        _ => {
+                            self.current_idx += 1;
+                            self.current_filled_free_size = 0;
+                            Some(DiskBlock::Free(size))
+                        },
+                    }
+                }
+            };
+        }
+        None
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -206,5 +303,26 @@ mod test {
         let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899".parse().unwrap();
         let actual = input.fragmented().collect::<DiskMap>();
         assert_eq!("0099811188827773336446555566..............", actual.to_string());
+    }
+
+    #[test]
+    fn defragment_example() {
+        let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899".parse().unwrap();
+        let actual = input.defragmented().collect::<DiskMap>();
+        assert_eq!("00992111777.44.333....5555.6666.....8888..", actual.to_string());
+    }
+
+    #[test]
+    fn checksum_fragmented() {
+        let input: DiskMap = "0099811188827773336446555566..............".parse().unwrap();
+        let actual = input.checksum();
+        assert_eq!(1928, actual);
+    }
+
+    #[test]
+    fn checksum_defragmented() {
+        let input: DiskMap = "00992111777.44.333....5555.6666.....8888..".parse().unwrap();
+        let actual = input.checksum();
+        assert_eq!(2858, actual);
     }
 }
