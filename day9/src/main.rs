@@ -33,16 +33,16 @@ fn parse_input(input: &mut &str) -> PResult<DiskMap> {
 
 fn part_one(mut input: &str) -> u128 {
     let input = parse_input(&mut input).unwrap();
-    
-    dbg!(input.defragmented().collect::<DiskMap>().to_string());
 
-    let output: u128 = input.defragmented()
+    dbg!(input.fragmented().collect::<DiskMap>().to_string());
+
+    let output: u128 = input.fragmented()
         .flat_map(|block| {
             match block {
                 DiskBlock::Free(_) => vec![block],
-                DiskBlock::File {id, size} => {
+                DiskBlock::File { id, size } => {
                     (0..size)
-                        .map(|_| DiskBlock::File {id, size: 1})
+                        .map(|_| DiskBlock::File { id, size: 1 })
                         .collect()
                 }
             }
@@ -51,7 +51,7 @@ fn part_one(mut input: &str) -> u128 {
         .map(|(i, block)| {
             match block {
                 DiskBlock::Free(_) => 0,
-                DiskBlock::File {id, size} => id as u128 * i as u128
+                DiskBlock::File { id, size } => id as u128 * i as u128
             }
         })
         .sum();

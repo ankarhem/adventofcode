@@ -71,24 +71,24 @@ impl FromStr for DiskMap {
     }
 }
 
-pub struct DefragmentedIter<'a> {
+pub struct FragmentedIter<'a> {
     iter: &'a [DiskBlock],
     current_start_idx: usize,
     current_end_idx: usize,
     current_filled_free_size: u32,
-    current_defragmented_file: Option<(usize, u32)>,
+    current_fragmented_file: Option<(usize, u32)>,
     file_size_remaining: u32,
     free_size_remaining: u32,
 }
 
 impl DiskMap {
-    pub fn defragmented(&self) -> DefragmentedIter {
-        DefragmentedIter {
+    pub fn fragmented(&self) -> FragmentedIter {
+        FragmentedIter {
             iter: &self.0,
             current_start_idx: 0,
             current_end_idx: &self.0.len() - 1,
             current_filled_free_size: 0,
-            current_defragmented_file: None,
+            current_fragmented_file: None,
             file_size_remaining: self.0.iter().filter_map(|block| {
                 match block {
                     DiskBlock::File { size, .. } => Some(size),
@@ -105,7 +105,7 @@ impl DiskMap {
     }
 }
 
-impl<'a> Iterator for DefragmentedIter<'a> {
+impl<'a> Iterator for FragmentedIter<'a> {
     type Item = DiskBlock;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -127,13 +127,13 @@ impl<'a> Iterator for DefragmentedIter<'a> {
                         }
                         match file_block {
                             DiskBlock::File { id, size: og_size } => {
-                                let size = og_size - self.current_defragmented_file
+                                let size = og_size - self.current_fragmented_file
                                     .unwrap_or((0, 0)).1;
 
                                 if size_to_fill > size {
                                     self.file_size_remaining -= size;
                                     self.current_filled_free_size += size;
-                                    self.current_defragmented_file = None;
+                                    self.current_fragmented_file = None;
                                     self.current_end_idx -= 1;
                                     return Some(DiskBlock::File { id: *id, size });
                                 }
@@ -143,13 +143,13 @@ impl<'a> Iterator for DefragmentedIter<'a> {
                                 self.current_filled_free_size = 0;
                                 if size_to_fill == size {
                                     self.file_size_remaining -= size;
-                                    self.current_defragmented_file = None;
+                                    self.current_fragmented_file = None;
                                     self.current_end_idx -= 1;
                                     return Some(DiskBlock::File { id: *id, size });
                                 }
 
                                 self.file_size_remaining -= size_to_fill;
-                                self.current_defragmented_file = Some((*id, self.current_defragmented_file
+                                self.current_fragmented_file = Some((*id, self.current_fragmented_file
                                     .unwrap_or((0, 0)).1 + size_to_fill));
                                 Some(DiskBlock::File { id: *id, size: size_to_fill })
                             }
@@ -158,11 +158,11 @@ impl<'a> Iterator for DefragmentedIter<'a> {
                     }
                     DiskBlock::File { id, size } => {
                         self.current_start_idx += 1;
-                        let size = match self.current_defragmented_file {
-                            Some((defragmented_id, defragmented_size)) => {
-                                if id == &defragmented_id {
-                                    let size = size - defragmented_size;
-                                    self.current_defragmented_file = None;
+                        let size = match self.current_fragmented_file {
+                            Some((fragmented_id, fragmented_size)) => {
+                                if id == &fragmented_id {
+                                    let size = size - fragmented_size;
+                                    self.current_fragmented_file = None;
                                     size
                                 } else {
                                     *size
@@ -195,16 +195,16 @@ mod test {
     }
 
     #[test]
-    fn defragment_mini() {
+    fn fragment_mini() {
         let input: DiskMap = "0..111....22222".parse().unwrap();
-        let actual = input.defragmented().collect::<DiskMap>();
+        let actual = input.fragmented().collect::<DiskMap>();
         assert_eq!("022111222......", actual.to_string());
     }
 
     #[test]
-    fn defragment_example() {
+    fn fragment_example() {
         let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899".parse().unwrap();
-        let actual = input.defragmented().collect::<DiskMap>();
+        let actual = input.fragmented().collect::<DiskMap>();
         assert_eq!("0099811188827773336446555566..............", actual.to_string());
     }
 }
