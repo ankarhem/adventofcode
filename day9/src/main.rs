@@ -1,97 +1,63 @@
-use std::fmt::Display;
-use winnow::Parser;
+use winnow::combinator::{opt, repeat};
+use winnow::stream::AsChar;
+use winnow::token::take_while;
+use winnow::{Located, PResult, Parser};
 
-#[derive(Debug, Clone)]
-enum DiskBlock {
-    File {
-        id: u32,
-        size: usize,
-    },
-    Free(usize),
+fn parse_single_digit(input: &mut Located<&str>) -> PResult<u32> {
+    take_while(1..2, AsChar::is_dec_digit)
+        .parse_next(input)
+        .map(|c| c.parse().unwrap())
 }
 
-impl Display for DiskBlock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            DiskBlock::File { id, size } => format!("{}", id).repeat(*size),
-            DiskBlock::Free(size) => ".".repeat(*size),
-        };
-        write!(f, "{}", str)
-    }
+fn disk_block_parser(input: &mut Located<&str>) -> PResult<String> {
+    parse_single_digit.with_span().parse_next(input)
+        .map(|(d, range)| format!("{}", range.start / 2).repeat(d as usize))
 }
 
-fn parse_input(input: &str) -> Vec<DiskBlock> {
-    input.chars().enumerate().map(|(i, c)| {
-        let size = c.to_digit(10).unwrap() as usize;
-        if i % 2 == 0 {
-            DiskBlock::File {
-                id: (i / 2) as u32,
-                size,
-            }
-        } else {
-            DiskBlock::Free(size)
-        }
-    }).collect()
+fn free_space_parser(input: &mut Located<&str>) -> PResult<String> {
+    parse_single_digit.parse_next(input)
+        .map(|d| ".".repeat(d as usize))
 }
 
-struct DefragmentedIter<'a, T> {
-    blocks: &'a [T],
-    current: usize,
+fn parse_input(input: &mut &str) -> PResult<String> {
+    let mut located_input = Located::new(*input);
+    let results: Vec<(String, Option<String>)> = repeat(1.., (
+        disk_block_parser,
+        opt(free_space_parser),
+    )).parse_next(&mut located_input)?;
+
+    let output = results.iter().fold(String::new(), |acc, (disk_block, free_space)| {
+        acc + disk_block + free_space.as_deref().unwrap_or("")
+    });
+
+    Ok(output)
 }
 
-trait Defragmentable<T> {
-    fn defragment(&self) -> DefragmentedIter<T>;
-}
+fn defragment(input: &str) -> String {
+    let mut output = String::new();
+    let mut file_blocks_to_move = input
+        .chars()
+        .rev()
+        .filter(|&c| c != '.');
 
-impl Defragmentable<DiskBlock> for Vec<DiskBlock> {
-    fn defragment(&self) -> DefragmentedIter<DiskBlock> {
-        DefragmentedIter {
-            blocks: self.as_slice(),
-            current: 0,
+    for c in input.chars() {
+        let f = file_blocks_to_move.next();
+        match (c, f) {
+            (_, None) => output.push('.'),
+            ('.', Some(f)) => output.push(f),
+            _ => output.push(c)
         }
     }
+
+    output
 }
 
-impl<'a> Iterator for DefragmentedIter<'a, DiskBlock> {
-    type Item = &'a DiskBlock;
+fn part_one(mut input: &str) -> u32 {
+    let input = parse_input(&mut input).unwrap();
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut i = self.current;
-        
-        match &self.blocks[i] {
-            &DiskBlock::File { .. } => Some(&self.blocks[i]),
-            &DiskBlock::Free(size) => {
-                if size > 0 {
-                    self.current += 1;
-                    Some(&self.blocks[i])
-                } else {
-                    None
-                } 
-            }
-        }
-    }
-}
+    let mut output = defragment(&input);
 
-
-fn part_one(input: &str) -> u32 {
-    let input = parse_input(input);
-
-    input
-        .defragment()
-        .filter(|block| match block {
-            DiskBlock::File { .. } => true,
-            _ => false,
-        })
-        .enumerate()
-        .map(|(i, block)| {
-            match block {
-                DiskBlock::File { id , size} => {
-                    *id * i as u32
-                }
-                DiskBlock::Free(_) => 0
-            }
-        })
-        .sum()
+    todo!()
 }
 
 fn part_two(input: &str) -> u32 {
@@ -113,16 +79,23 @@ mod test {
 
     #[test]
     fn parser_mini() {
-        let example = "12345";
-        let actual = parse_input(example).iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
+        let mut example = "12345";
+        let actual = parse_input(&mut example).unwrap();
         assert_eq!("0..111....22222", actual);
     }
 
     #[test]
     fn parser_example() {
-        let example = include_str!("example");
-        let actual = parse_input(example).iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
+        let mut example = include_str!("example");
+        let actual = parse_input(&mut example).unwrap();
         assert_eq!("00...111...2...333.44.5555.6666.777.888899", actual);
+    }
+
+    #[test]
+    fn defragment_mini() {
+        let input = "0..111....22222";
+        let actual = defragment(input);
+        assert_eq!("022111222......", actual);
     }
 
 
