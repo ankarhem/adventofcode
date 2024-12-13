@@ -71,7 +71,7 @@ impl FromStr for DiskMap {
     }
 }
 
-struct DefragmentedIter<'a> {
+pub struct DefragmentedIter<'a> {
     iter: &'a [DiskBlock],
     current_start_idx: usize,
     current_end_idx: usize,
@@ -82,7 +82,7 @@ struct DefragmentedIter<'a> {
 }
 
 impl DiskMap {
-    fn defragmented(&self) -> DefragmentedIter {
+    pub fn defragmented(&self) -> DefragmentedIter {
         DefragmentedIter {
             iter: &self.0,
             current_start_idx: 0,
@@ -167,7 +167,7 @@ impl<'a> Iterator for DefragmentedIter<'a> {
                                 } else {
                                     *size
                                 }
-                            },
+                            }
                             None => *size,
                         };
                         self.file_size_remaining -= size;

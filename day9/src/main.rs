@@ -31,12 +31,33 @@ fn parse_input(input: &mut &str) -> PResult<DiskMap> {
     Ok(output)
 }
 
-fn part_one(mut input: &str) -> u32 {
+fn part_one(mut input: &str) -> u128 {
     let input = parse_input(&mut input).unwrap();
+    
+    dbg!(input.defragmented().collect::<DiskMap>().to_string());
 
-    // let mut output = defragment(&input);
+    let output: u128 = input.defragmented()
+        .flat_map(|block| {
+            match block {
+                DiskBlock::Free(_) => vec![block],
+                DiskBlock::File {id, size} => {
+                    (0..size)
+                        .map(|_| DiskBlock::File {id, size: 1})
+                        .collect()
+                }
+            }
+        })
+        .enumerate()
+        .map(|(i, block)| {
+            match block {
+                DiskBlock::Free(_) => 0,
+                DiskBlock::File {id, size} => id as u128 * i as u128
+            }
+        })
+        .sum();
 
-    todo!()
+
+    output
 }
 
 fn part_two(input: &str) -> u32 {
