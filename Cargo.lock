@@ -59,6 +59,15 @@ name = "day1"
 version = "0.1.0"
 
 [[package]]
+name = "day11"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "rstest",
+]
+
+[[package]]
 name = "day2"
 version = "0.1.0"
 
