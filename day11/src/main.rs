@@ -41,7 +41,11 @@ fn part_one(input: &str) -> u32 {
 }
 
 fn part_two(input: &str) -> u32 {
-    todo!()
+    let stones = parse_input(input);
+
+    let stones = process_stones(stones, 75);
+
+    stones.len() as u32
 }
 
 fn main() {
@@ -49,8 +53,8 @@ fn main() {
     let result1 = part_one(input);
     println!("Day 11, part 1: {}", result1);
 
-    // let result2 = part_two(input);
-    // println!("Day 11, part 2: {}", result2);
+    let result2 = part_two(input);
+    println!("Day 11, part 2: {}", result2);
 }
 
 #[cfg(test)]
