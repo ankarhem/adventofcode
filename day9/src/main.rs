@@ -56,10 +56,10 @@ fn part_two(mut input: &str) -> u128 {
 fn main() {
     let input = include_str!("input");
     let result1 = part_one(input);
-    println!("Day 1, part 1: {}", result1);
+    println!("Day 9, part 1: {}", result1);
 
     let result2 = part_two(input);
-    println!("Day 1, part 2: {}", result2);
+    println!("Day 9, part 2: {}", result2);
 }
 
 #[cfg(test)]
