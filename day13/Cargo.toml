@@ -8,3 +8,4 @@ rstest = { workspace = true }
 anyhow = { workspace = true }
 winnow = { workspace = true }
 itertools = { workspace = true }
+insta = { workspace = true }

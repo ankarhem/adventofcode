@@ -1,5 +1,47 @@
-fn parse_input(input: &str) -> (Vec<u32>, Vec<u32>) {
-todo!()
+use winnow::ascii::{alpha1, digit1, newline, space1};
+use winnow::combinator::{alt, preceded, separated, separated_pair};
+use winnow::{PResult, Parser};
+
+#[derive(Debug)]
+struct Machine {
+    button_a: (u32, u32),
+    button_b: (u32, u32),
+    price: (u32, u32),
+}
+
+fn coord_parser(input: &mut &str) -> PResult<u32> {
+    preceded((alpha1, alt(("+", "="))), digit1.try_map(|s: &str| s.parse())).parse_next(input)
+}
+
+fn button_parser(input: &mut &str) -> PResult<(u32, u32)> {
+    ("Button ", alpha1, ":", space1).parse_next(input)?;
+
+    separated_pair(coord_parser, (",", space1), coord_parser).parse_next(input)
+}
+
+fn prize_parser(input: &mut &str) -> PResult<(u32, u32)> {
+    "Prize: ".parse_next(input)?;
+    separated_pair(coord_parser, (",", space1), coord_parser).parse_next(input)
+}
+
+fn machine_parser(input: &mut &str) -> PResult<Machine> {
+    let (b1, _, b2, _, p) = (
+        button_parser,
+        newline,
+        button_parser,
+        newline,
+        prize_parser,
+    ).parse_next(input)?;
+
+    Ok(Machine {
+        button_a: b1,
+        button_b: b2,
+        price: p,
+    })
+}
+
+fn parse_input(input: &mut &str) -> PResult<Vec<Machine>> {
+    separated(1.., machine_parser, (newline, newline)).parse_next(input)
 }
 
 fn part_one(input: &str) -> u32 {
@@ -22,12 +64,49 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
-    #[test]
-    fn example_one() {
-        let example = include_str!("example");
-        let actual = part_one(example);
-        assert_eq!(11, actual);
+    use rstest::rstest;
+
+    #[rstest]
+    #[case("X+94", 94)]
+    #[case("Y+34", 34)]
+    #[case("X=8400", 8400)]
+    #[case("Y=5400", 5400)]
+    fn coord_parser_test(#[case] mut input: &str, #[case] expected: u32) {
+        let actual = coord_parser(&mut input).unwrap();
+        assert_eq!(expected, actual);
     }
+
+    #[rstest]
+    #[case("Button A: X+94, Y+34", (94, 34))]
+    #[case("Button B: X+22, Y+67", (22, 67))]
+    #[case("Button A: X+26, Y+66", (26, 66))]
+    #[case("Button B: X+67, Y+21", (67, 21))]
+    fn button_parser_test(#[case] mut input: &str, #[case] expected: (u32, u32)) {
+        let actual = button_parser(&mut input).unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[rstest]
+    #[case("Prize: X=8400, Y=5400", (8400, 5400))]
+    #[case("Prize: X=12748, Y=12176", (12748, 12176))]
+    fn price_parser_test(#[case] mut input: &str, #[case] expected: (u32, u32)) {
+        let actual = prize_parser(&mut input).unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn can_parse_example() {
+        let mut example = include_str!("example");
+        let actual = parse_input(&mut example).unwrap();
+        insta::assert_debug_snapshot!(actual);
+    }
+
+    // #[test]
+    // fn example_one() {
+    //     let example = include_str!("example");
+    //     let actual = part_one(example);
+    //     assert_eq!(11, actual);
+    // }
 
     // #[test]
     // fn example_two() {

@@ -45,6 +45,7 @@
             cargo-edit
             cargo-watch
             cargo-nextest
+            cargo-insta
             rust-analyzer
           ];
 
