@@ -21,3 +21,4 @@ winnow = { version = "0.6.20" }
 anyhow = { version = "1.0.94" }
 rstest = { version = "0.23.0" }
 rayon = { version = "1.10.0" }
+cached = { version = "0.54.0" }

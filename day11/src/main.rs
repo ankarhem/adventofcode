@@ -1,3 +1,4 @@
+use cached::proc_macro::cached;
 fn parse_input(input: &str) -> Vec<u128> {
     input
         .split_whitespace()
@@ -5,9 +6,14 @@ fn parse_input(input: &str) -> Vec<u128> {
         .collect()
 }
 
-fn process_stone(stone: &u128) -> Vec<u128> {
-    if *stone == 0 {
-        return vec![1];
+#[cached]
+fn process_stone(stone: u128, blinks: usize) -> u64 {
+    if blinks == 0 {
+        return 1;
+    }
+
+    if stone == 0 {
+        return process_stone(1, blinks - 1);
     }
 
     let digits = stone.to_string();
@@ -18,34 +24,30 @@ fn process_stone(stone: &u128) -> Vec<u128> {
         let (left, right) = digits.split_at(half);
         let left = left.parse::<u128>().unwrap();
         let right = right.parse::<u128>().unwrap();
-        return vec![left, right];
+        return process_stone(left, blinks - 1) + process_stone(right, blinks - 1);
     }
 
-    vec![*stone * 2024]
+    process_stone(stone * 2024, blinks - 1)
 }
 
-fn process_stones(stones: Vec<u128>, blinks: usize) -> Vec<u128> {
-    (0..blinks).fold(stones, |acc, _| {
-        acc.iter()
-            .flat_map(|s| process_stone(s))
-            .collect()
-    })
+fn process_stones(stones: Vec<u128>, blinks: usize) -> u64 {
+    stones.iter().map(|&stone| process_stone(stone, blinks)).sum()
 }
 
-fn part_one(input: &str) -> u32 {
+fn part_one(input: &str) -> u64 {
     let stones = parse_input(input);
 
-    let stones = process_stones(stones, 25);
+    let n_stones = process_stones(stones, 25);
 
-    stones.len() as u32
+    n_stones
 }
 
-fn part_two(input: &str) -> u32 {
+fn part_two(input: &str) -> u64 {
     let stones = parse_input(input);
 
-    let stones = process_stones(stones, 75);
+    let n_stones = process_stones(stones, 75);
 
-    stones.len() as u32
+    n_stones
 }
 
 fn main() {
@@ -65,16 +67,16 @@ mod test {
     #[test]
     fn example_one_1_blink() {
         let example = parse_input("125 17");
-        let actual = process_stones(example, 1).iter().join(" ");
-        assert_eq!("253000 1 7", actual);
+        let actual = process_stones(example, 1);
+        assert_eq!(3, actual);
     }
     #[test]
     fn example_one_6_blinks() {
         let example = parse_input("125 17");
-        let actual = process_stones(example, 6).iter().join(" ");
-        assert_eq!("2097446912 14168 4048 2 0 2 4 40 48 2024 40 48 80 96 2 8 6 7 6 0 3 2", actual);
+        let actual = process_stones(example, 6);
+        assert_eq!(22, actual);
     }
-    
+
     #[test]
     fn part_one_example() {
         let actual = part_one("125 17");

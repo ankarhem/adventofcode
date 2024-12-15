@@ -7,3 +7,4 @@ edition = "2021"
 rstest = { workspace = true }
 anyhow = { workspace = true }
 itertools = { workspace = true }
+cached = { workspace = true }
