@@ -9,3 +9,5 @@ anyhow = { workspace = true }
 winnow = { workspace = true }
 itertools = { workspace = true }
 insta = { workspace = true }
+gcd = { workspace = true }
+lib = { path = "../lib" }
