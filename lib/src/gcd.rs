@@ -1,4 +1,4 @@
-pub fn extended_gcd<Number>(a: Number, b: Number) -> (Number, Number, Number)
+pub fn extended_gcd<Number>(_a: Number, _b: Number) -> (Number, Number, Number)
 where
     Number: Into<i64>,
 {

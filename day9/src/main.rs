@@ -12,21 +12,23 @@ fn parse_single_digit(input: &mut Located<&str>) -> PResult<u32> {
 }
 
 fn disk_block_parser(input: &mut Located<&str>) -> PResult<DiskBlock> {
-    parse_single_digit.with_span().parse_next(input)
-        .map(|(d, range)| DiskBlock::File { id: range.start / 2, size: d })
+    parse_single_digit
+        .with_span()
+        .parse_next(input)
+        .map(|(d, range)| DiskBlock::File {
+            id: range.start / 2,
+            size: d,
+        })
 }
 
 fn free_space_parser(input: &mut Located<&str>) -> PResult<DiskBlock> {
-    parse_single_digit.parse_next(input)
-        .map(|d| DiskBlock::Free(d))
+    parse_single_digit.parse_next(input).map(DiskBlock::Free)
 }
 
 fn parse_input(input: &mut &str) -> PResult<DiskMap> {
     let mut located_input = Located::new(*input);
-    let output: DiskMap = repeat(1.., (
-        disk_block_parser,
-        opt(free_space_parser),
-    )).parse_next(&mut located_input)?;
+    let output: DiskMap =
+        repeat(1.., (disk_block_parser, opt(free_space_parser))).parse_next(&mut located_input)?;
 
     Ok(output)
 }
@@ -34,10 +36,7 @@ fn parse_input(input: &mut &str) -> PResult<DiskMap> {
 fn part_one(mut input: &str) -> u128 {
     let input = parse_input(&mut input).unwrap();
 
-    let output: u128 = input
-        .fragmented()
-        .collect::<DiskMap>()
-        .checksum();
+    let output: u128 = input.fragmented().collect::<DiskMap>().checksum();
 
     output
 }
@@ -45,10 +44,7 @@ fn part_one(mut input: &str) -> u128 {
 fn part_two(mut input: &str) -> u128 {
     let input = parse_input(&mut input).unwrap();
 
-    let output: u128 = input
-        .defragmented()
-        .collect::<DiskMap>()
-        .checksum();
+    let output: u128 = input.defragmented().collect::<DiskMap>().checksum();
 
     output
 }

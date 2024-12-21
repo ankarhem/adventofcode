@@ -7,10 +7,7 @@ use winnow::stream::Accumulate;
 
 #[derive(Debug, Clone)]
 pub enum DiskBlock {
-    File {
-        id: usize,
-        size: u32,
-    },
+    File { id: usize, size: u32 },
     Free(u32),
 }
 impl std::fmt::Display for DiskBlock {
@@ -45,7 +42,7 @@ impl Accumulate<(DiskBlock, Option<DiskBlock>)> for DiskMap {
     }
 }
 impl FromIterator<DiskBlock> for DiskMap {
-    fn from_iter<T: IntoIterator<Item=DiskBlock>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = DiskBlock>>(iter: T) -> Self {
         let disk_map = iter.into_iter().collect::<Vec<DiskBlock>>();
         DiskMap(disk_map)
     }
@@ -54,22 +51,26 @@ impl FromIterator<DiskBlock> for DiskMap {
 fn parse_diskmap(input: &str) -> anyhow::Result<DiskMap> {
     let chunks = input.chars().chunk_by(|c| *c);
 
-    chunks.into_iter().map(|(c, group)| {
-        match c {
+    chunks
+        .into_iter()
+        .map(|(c, group)| match c {
             '.' => Ok(DiskBlock::Free(group.count() as u32)),
             _ => {
                 let id = c.to_digit(10).ok_or(anyhow!("Invalid digit"))?;
-                Ok(DiskBlock::File { id: id as usize, size: group.count() as u32 })
+                Ok(DiskBlock::File {
+                    id: id as usize,
+                    size: group.count() as u32,
+                })
             }
-        }
-    }).collect()
+        })
+        .collect()
 }
 
 impl FromStr for DiskMap {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut input = s;
-        parse_diskmap(&mut input).map_err(|e| anyhow!("{}", e))
+        let input = s;
+        parse_diskmap(input).map_err(|e| anyhow!("{}", e))
     }
 }
 
@@ -91,42 +92,40 @@ impl DiskMap {
             current_end_idx: &self.0.len() - 1,
             current_filled_free_size: 0,
             current_fragmented_file: None,
-            file_size_remaining: self.0.iter().filter_map(|block| {
-                match block {
+            file_size_remaining: self
+                .0
+                .iter()
+                .filter_map(|block| match block {
                     DiskBlock::File { size, .. } => Some(size),
                     _ => None,
-                }
-            }).sum::<u32>(),
-            free_size_remaining: self.0.iter().filter_map(|block| {
-                match block {
+                })
+                .sum::<u32>(),
+            free_size_remaining: self
+                .0
+                .iter()
+                .filter_map(|block| match block {
                     DiskBlock::Free(size) => Some(size),
                     _ => None,
-                }
-            }).sum::<u32>(),
+                })
+                .sum::<u32>(),
         }
     }
 
     pub fn checksum(&self) -> u128 {
         self.0
             .iter()
-            .flat_map(|block| {
-                match block {
-                    DiskBlock::Free(size) => {
-                        (0..*size).map(|_| DiskBlock::Free(1)).collect::<Vec<DiskBlock>>()
-                    }
-                    DiskBlock::File { id, size } => {
-                        (0..*size)
-                            .map(|_| DiskBlock::File { id: *id, size: 1 })
-                            .collect::<Vec<DiskBlock>>()
-                    }
-                }
+            .flat_map(|block| match block {
+                DiskBlock::Free(size) => (0..*size)
+                    .map(|_| DiskBlock::Free(1))
+                    .collect::<Vec<DiskBlock>>(),
+                DiskBlock::File { id, size } => (0..*size)
+                    .map(|_| DiskBlock::File { id: *id, size: 1 })
+                    .collect::<Vec<DiskBlock>>(),
             })
             .enumerate()
-            .map(|(i, block)| {
-                match block {
-                    DiskBlock::Free(_) => 0,
-                    DiskBlock::File { id, size } => id.mul(i) as u128
-                }
+            .map(|(i, block)| match block {
+                DiskBlock::Free(_) => 0,
+                DiskBlock::File { id, size } => id.mul(i) as u128,
             })
             .sum()
     }
@@ -154,8 +153,8 @@ impl<'a> Iterator for FragmentedIter<'a> {
                         }
                         match file_block {
                             DiskBlock::File { id, size: og_size } => {
-                                let size = og_size - self.current_fragmented_file
-                                    .unwrap_or((0, 0)).1;
+                                let size =
+                                    og_size - self.current_fragmented_file.unwrap_or((0, 0)).1;
 
                                 if size_to_fill > size {
                                     self.file_size_remaining -= size;
@@ -164,7 +163,6 @@ impl<'a> Iterator for FragmentedIter<'a> {
                                     self.current_end_idx -= 1;
                                     return Some(DiskBlock::File { id: *id, size });
                                 }
-
 
                                 self.current_start_idx += 1;
                                 self.current_filled_free_size = 0;
@@ -176,9 +174,14 @@ impl<'a> Iterator for FragmentedIter<'a> {
                                 }
 
                                 self.file_size_remaining -= size_to_fill;
-                                self.current_fragmented_file = Some((*id, self.current_fragmented_file
-                                    .unwrap_or((0, 0)).1 + size_to_fill));
-                                Some(DiskBlock::File { id: *id, size: size_to_fill })
+                                self.current_fragmented_file = Some((
+                                    *id,
+                                    self.current_fragmented_file.unwrap_or((0, 0)).1 + size_to_fill,
+                                ));
+                                Some(DiskBlock::File {
+                                    id: *id,
+                                    size: size_to_fill,
+                                })
                             }
                             _ => unreachable!("Expected file block"),
                         }
@@ -238,22 +241,26 @@ impl Iterator for DefragmentedIter<'_> {
                         return Some(DiskBlock::Free(*size));
                     }
                     self.used_file_ids.insert(*id);
-                    Some(DiskBlock::File { id: *id, size: *size })
+                    Some(DiskBlock::File {
+                        id: *id,
+                        size: *size,
+                    })
                 }
                 DiskBlock::Free(size) => {
                     let size = *size - self.current_filled_free_size;
-                    let defragmented_block = self.iter.iter().rev()
-                        .find(|block| {
-                            match block {
-                                DiskBlock::File { id: candidate_id, size: candidate_size } => {
-                                    return candidate_size <= &size && !self.used_file_ids.contains(candidate_id);
-                                }
-                                _ => false,
-                            }
-                        });
+                    let defragmented_block = self.iter.iter().rev().find(|block| match block {
+                        DiskBlock::File {
+                            id: candidate_id,
+                            size: candidate_size,
+                        } => candidate_size <= &size && !self.used_file_ids.contains(candidate_id),
+                        _ => false,
+                    });
 
                     match defragmented_block {
-                        Some(DiskBlock::File { id: defragmented_id, size: defragmented_size }) => {
+                        Some(DiskBlock::File {
+                            id: defragmented_id,
+                            size: defragmented_size,
+                        }) => {
                             if defragmented_size == &size {
                                 self.current_idx += 1;
                                 self.current_filled_free_size = 0;
@@ -267,7 +274,7 @@ impl Iterator for DefragmentedIter<'_> {
                             self.current_idx += 1;
                             self.current_filled_free_size = 0;
                             Some(DiskBlock::Free(size))
-                        },
+                        }
                     }
                 }
             };
@@ -275,7 +282,6 @@ impl Iterator for DefragmentedIter<'_> {
         None
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -300,28 +306,42 @@ mod test {
 
     #[test]
     fn fragment_example() {
-        let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899".parse().unwrap();
+        let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899"
+            .parse()
+            .unwrap();
         let actual = input.fragmented().collect::<DiskMap>();
-        assert_eq!("0099811188827773336446555566..............", actual.to_string());
+        assert_eq!(
+            "0099811188827773336446555566..............",
+            actual.to_string()
+        );
     }
 
     #[test]
     fn defragment_example() {
-        let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899".parse().unwrap();
+        let input: DiskMap = "00...111...2...333.44.5555.6666.777.888899"
+            .parse()
+            .unwrap();
         let actual = input.defragmented().collect::<DiskMap>();
-        assert_eq!("00992111777.44.333....5555.6666.....8888..", actual.to_string());
+        assert_eq!(
+            "00992111777.44.333....5555.6666.....8888..",
+            actual.to_string()
+        );
     }
 
     #[test]
     fn checksum_fragmented() {
-        let input: DiskMap = "0099811188827773336446555566..............".parse().unwrap();
+        let input: DiskMap = "0099811188827773336446555566.............."
+            .parse()
+            .unwrap();
         let actual = input.checksum();
         assert_eq!(1928, actual);
     }
 
     #[test]
     fn checksum_defragmented() {
-        let input: DiskMap = "00992111777.44.333....5555.6666.....8888..".parse().unwrap();
+        let input: DiskMap = "00992111777.44.333....5555.6666.....8888.."
+            .parse()
+            .unwrap();
         let actual = input.checksum();
         assert_eq!(2858, actual);
     }

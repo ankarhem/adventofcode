@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Grid<T> {
     data: Vec<Vec<T>>,
     width: usize,
@@ -11,15 +11,15 @@ impl<T> Grid<T> {
     pub fn data(&self) -> &Vec<Vec<T>> {
         &self.data
     }
-    
+
     pub fn width(&self) -> usize {
         self.width
     }
-    
+
     pub fn height(&self) -> usize {
         self.height
     }
-    
+
     pub fn get(&self, (x, y): (usize, usize)) -> Option<&T> {
         self.data.get(y).and_then(|row| row.get(x))
     }
@@ -29,13 +29,14 @@ impl FromStr for Grid<char> {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let data: Vec<Vec<char>> = s
-            .lines()
-            .map(|line| line.chars().collect())
-            .collect();
+        let data: Vec<Vec<char>> = s.lines().map(|line| line.chars().collect()).collect();
         let height = data.len();
         let width = if height > 0 { data[0].len() } else { 0 };
-        Ok(Grid { data, width, height })
+        Ok(Grid {
+            data,
+            width,
+            height,
+        })
     }
 }
 

@@ -12,7 +12,11 @@ struct Machine {
 impl Machine {}
 
 fn coord_parser(input: &mut &str) -> PResult<i32> {
-    preceded((alpha1, alt(("+", "="))), digit1.try_map(|s: &str| s.parse())).parse_next(input)
+    preceded(
+        (alpha1, alt(("+", "="))),
+        digit1.try_map(|s: &str| s.parse()),
+    )
+    .parse_next(input)
 }
 
 fn button_parser(input: &mut &str) -> PResult<(i32, i32)> {
@@ -27,13 +31,8 @@ fn prize_parser(input: &mut &str) -> PResult<(i32, i32)> {
 }
 
 fn machine_parser(input: &mut &str) -> PResult<Machine> {
-    let (b1, _, b2, _, p) = (
-        button_parser,
-        newline,
-        button_parser,
-        newline,
-        prize_parser,
-    ).parse_next(input)?;
+    let (b1, _, b2, _, p) =
+        (button_parser, newline, button_parser, newline, prize_parser).parse_next(input)?;
 
     Ok(Machine {
         diophantine_a: Diophantine::new(b1.0, b1.1, p.0),

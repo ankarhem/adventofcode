@@ -1,5 +1,3 @@
-use crate::gcd::extended_gcd;
-
 #[derive(Debug)]
 pub struct Diophantine {
     a: i64,
@@ -22,11 +20,11 @@ impl Diophantine {
     pub fn solve(&self) -> Option<(i64, i64)> {
         todo!()
         // let (d, x, y) = extended_gcd(self.a, self.b);
-        // 
+        //
         // if self.c % d == 0 {
         //     let x = x * (self.c / d);
         //     let y = y * (self.c / d);
-        // 
+        //
         //     Some((x, y))
         // } else {
         //     None

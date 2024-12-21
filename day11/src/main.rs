@@ -31,23 +31,22 @@ fn process_stone(stone: u128, blinks: usize) -> u64 {
 }
 
 fn process_stones(stones: Vec<u128>, blinks: usize) -> u64 {
-    stones.iter().map(|&stone| process_stone(stone, blinks)).sum()
+    stones
+        .iter()
+        .map(|&stone| process_stone(stone, blinks))
+        .sum()
 }
 
 fn part_one(input: &str) -> u64 {
     let stones = parse_input(input);
 
-    let n_stones = process_stones(stones, 25);
-
-    n_stones
+    process_stones(stones, 25)
 }
 
 fn part_two(input: &str) -> u64 {
     let stones = parse_input(input);
 
-    let n_stones = process_stones(stones, 75);
-
-    n_stones
+    process_stones(stones, 75)
 }
 
 fn main() {
@@ -62,7 +61,6 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
-    use itertools::Itertools;
 
     #[test]
     fn example_one_1_blink() {
