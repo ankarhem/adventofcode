@@ -82,7 +82,9 @@ fn part_one(input: &str) -> u32 {
     trail_map
         .starting_points
         .iter()
-        .filter_map(|start| traverse(&trail_map, *start).map(|trail| trail.iter().unique().count() as u32))
+        .filter_map(|start| {
+            traverse(&trail_map, *start).map(|trail| trail.iter().unique().count() as u32)
+        })
         .sum::<u32>()
 }
 
