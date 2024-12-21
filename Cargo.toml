@@ -13,7 +13,7 @@ members = [
     "day9",
     "day11",
     "lib"
-    , "day13"]
+    , "day13", "day10"]
 
 [workspace.dependencies]
 itertools = { version = "0.13.0" }
