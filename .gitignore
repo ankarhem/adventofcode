@@ -2,5 +2,5 @@ target/
 .direnv/
 .idea/
 
-**/input_one.txt
-**/input_one.txt
+**/input.txt
+**/input
