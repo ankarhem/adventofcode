@@ -1,6 +1,6 @@
-/target
-.direnv
-.idea
-input
-input_one
-input_two
+target/
+.direnv/
+.idea/
+
+**/input_one.txt
+**/input_one.txt
