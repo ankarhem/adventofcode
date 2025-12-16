@@ -22,7 +22,7 @@ fn parse(input: &str) -> Vec<Rotation> {
 }
 
 const MAX_ROTATIONS: i16 = 100;
-fn run(input: &str) -> u16 {
+fn run_part1(input: &str) -> u16 {
     let rotations = parse(input);
 
     let mut count_0s: u16 = 0;
@@ -43,11 +43,51 @@ fn run(input: &str) -> u16 {
     count_0s
 }
 
+fn run_part2(input: &str) -> u16 {
+    let rotations = parse(input);
+
+    let mut count_0s: u16 = 0;
+    let mut current_state: i16 = 50;
+
+    // Count if we start at 0
+    if current_state == 0 {
+        count_0s += 1;
+    }
+
+    for rotation in rotations {
+        match rotation {
+            Rotation::Left(n) => {
+                // Move step by step, counting each time we hit 0
+                for _ in 0..n {
+                    current_state = (current_state - 1).rem_euclid(MAX_ROTATIONS);
+                    if current_state == 0 {
+                        count_0s += 1;
+                    }
+                }
+            }
+            Rotation::Right(n) => {
+                // Move step by step, counting each time we hit 0
+                for _ in 0..n {
+                    current_state = (current_state + 1) % MAX_ROTATIONS;
+                    if current_state == 0 {
+                        count_0s += 1;
+                    }
+                }
+            }
+        };
+    }
+
+    count_0s
+}
+
 fn main() {
     let input = include_str!("../input.txt");
 
-    let count_0s = run(input);
-    println!("Number of times at position 0: {}", count_0s);
+    let result = run_part1(input);
+    println!("part 1: {}", result);
+
+    let result = run_part2(input);
+    println!("part 2: {}", result);
 }
 
 #[cfg(test)]
@@ -76,8 +116,14 @@ mod test {
     }
 
     #[test]
-    fn handles_example() {
-        let result = run(INPUT);
+    fn handles_example_part_one() {
+        let result = run_part1(INPUT);
         assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn handles_example_part_two() {
+        let result = run_part2(INPUT);
+        assert_eq!(result, 6);
     }
 }
